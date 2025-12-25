@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Panda Coin - Web3 Mini App</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --bg: #000000;
+            --card-bg: #111827;
+            --text-main: #FFFFFF;
+            --text-dim: #9CA3AF;
+            --accent: #F59E0B;
+            --danger: #EF4444;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- Components --- */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-ghost { background: var(--glass); color: var(--text-main); }
+
+        /* --- Header --- */
+        .header {
+            padding: 20px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 100;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            background: #222;
+        }
+
+        /* --- Stats Grid --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-box {
+            background: var(--glass);
+            padding: 12px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-value { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
+        .stat-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- Announcements --- */
+        .announcement-container {
+            margin-bottom: 20px;
+        }
+        .media-banner {
+            width: 100%;
+            border-radius: 15px;
+            max-height: 200px;
+            object-fit: cover;
+        }
+
+        /* --- Tabs & Navigation --- */
+        .tab-content { padding: 0 16px 100px 16px; display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 10px;
+            color: var(--text-dim);
+            text-decoration: none;
+            flex: 1;
+        }
+
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 20px; margin-bottom: 4px; }
+
+        /* --- Forms & Tables --- */
+        .input-field {
+            width: 100%;
+            background: var(--glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 14px;
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 12px;
+            outline: none;
+        }
+
+        .tag {
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .tag-locked { background: #333; color: #999; }
+        .tag-unlocked { background: var(--primary); color: white; }
+
+        /* --- Animations --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Toast --- */
+        #toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast"></div>
+
+    <div class="header">
+        <img id="user-photo" class="avatar" src="https://via.placeholder.com/48" alt="Panda">
+        <div>
+            <div id="user-name" style="font-weight: 800; font-size: 1.1rem;">Loading...</div>
+            <div id="user-id" style="color: var(--text-dim); font-size: 0.8rem;">@panda_user</div>
+        </div>
+        <div id="transfer-badge" style="margin-left: auto;"></div>
+    </div>
+
+    <main>
+        <section id="tab-dashboard" class="tab-content active">
+            <div id="announcement-spot"></div>
+
+            <div class="glass-card">
+                <div class="stat-label" style="text-align: center; margin-bottom: 8px;">Total Panda Balance</div>
+                <div id="total-coins" style="font-size: 2.5rem; font-weight: 900; text-align: center; color: var(--primary);">0.00</div>
+                
+                <div class="stats-grid" style="margin-top: 15px;">
+                    <div class="stat-box">
+                        <div class="stat-label">Purchased</div>
+                        <div id="purchased-coins" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Earned</div>
+                        <div id="earned-coins" class="stat-value">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid" style="margin-bottom: 16px;">
+                <div class="glass-card" style="margin-bottom:0; text-align:center">
+                    <div class="stat-label">Referrals</div>
+                    <div id="ref-count" class="stat-value">0</div>
+                </div>
+                <div class="glass-card" style="margin-bottom:0; text-align:center">
+                    <div class="stat-label">Tasks Done</div>
+                    <div id="task-count" class="stat-value">0</div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <h4 style="margin-top:0">Quick Tasks</h4>
+                <div id="quick-tasks-list"></div>
+                <button class="btn btn-ghost" onclick="switchTabs('tasks')">View All Tasks</button>
+            </div>
+
+            <div class="glass-card">
+                <h4 style="margin-top:0">Invite Friends</h4>
+                <p style="font-size: 0.8rem; color: var(--text-dim);">Earn 0.5 Panda Coins per referral. Locked until first purchase.</p>
+                <button class="btn btn-primary" onclick="copyReferralLink()">Copy Invite Link</button>
+            </div>
+        </section>
+
+        <section id="tab-tasks" class="tab-content">
+            <h3>Social Missions</h3>
+            <div id="full-tasks-list"></div>
+        </section>
+
+        <section id="tab-deposit" class="tab-content">
+            <div class="glass-card" style="background: linear-gradient(45deg, #111827, #065F46);">
+                <h3>Deposit & Unlock</h3>
+                <p style="font-size: 0.85rem;">Purchase min. <b>5 USD</b> worth of Panda Coins to unlock transfers and withdrawals.</p>
+                <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px; margin: 10px 0;">
+                    <div class="stat-label">Official Bybit UID</div>
+                    <div style="font-family: monospace; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span>244393061</span>
+                        <button class="btn btn-sm btn-primary" style="width:auto; padding: 4px 10px; font-size:10px;" onclick="copyText('244393061')">Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <h4>Submit Deposit</h4>
+                <label class="stat-label">Amount (USD)</label>
+                <input type="number" id="dep-amount" class="input-field" placeholder="Minimum 5">
+                <label class="stat-label">Bybit Transaction ID / Proof</label>
+                <input type="text" id="dep-txid" class="input-field" placeholder="TXID from Bybit">
+                <button class="btn btn-primary" onclick="submitDeposit()">Confirm Purchase</button>
+            </div>
+
+            <h4>Recent Transactions</h4>
+            <div id="deposit-history"></div>
+        </section>
+
+        <section id="tab-withdrawal" class="tab-content">
+            <div class="glass-card">
+                <h3>Withdraw Panda</h3>
+                <div id="withdraw-info"></div>
+                <label class="stat-label">Amount (USD)</label>
+                <input type="number" id="wd-amount" class="input-field" placeholder="Amount to withdraw">
+                <label class="stat-label">Withdrawal Method (Bybit/Wallet/UPI)</label>
+                <input type="text" id="wd-method" class="input-field" placeholder="Enter details">
+                <button class="btn btn-primary" id="wd-btn" onclick="submitWithdrawal()">Request Withdrawal</button>
+            </div>
+            
+            <h4>Status Log</h4>
+            <div id="withdrawal-history"></div>
+        </section>
+
+        <section id="tab-profile" class="tab-content">
+            <div class="glass-card" style="text-align:center">
+                <img id="prof-photo" class="avatar" style="width:80px; height:80px; margin-bottom:10px;" src="">
+                <h2 id="prof-name" style="margin:0">User</h2>
+                <p id="prof-id" style="color:var(--text-dim)"></p>
+                <div id="prof-transfer-status"></div>
+            </div>
+
+            <div class="glass-card">
+                <div class="flex-between" style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span class="stat-label">Total Withdrawn</span>
+                    <span id="prof-wd-total" style="font-weight:bold">$0.00</span>
+                </div>
+                <div class="flex-between" style="display:flex; justify-content:space-between;">
+                    <span class="stat-label">Referred By</span>
+                    <span id="prof-refferer" style="font-weight:bold">None</span>
+                </div>
+            </div>
+
+            <button class="btn btn-ghost" onclick="location.reload()">Refresh Data</button>
+        </section>
+    </main>
+
+    <nav class="navbar">
+        <a href="#" class="nav-item active" onclick="switchTabs('dashboard')">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchTabs('tasks')">
+            <span class="nav-icon">🎯</span>
+            <span>Tasks</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchTabs('deposit')">
+            <span class="nav-icon">💰</span>
+            <span>Buy</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchTabs('withdrawal')">
+            <span class="nav-icon">🏧</span>
+            <span>Cashout</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchTabs('profile')">
+            <span class="nav-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <script>
+        // --- Firebase Config ---
+        const firebaseConfig = {
+  apiKey: "AIzaSyAjJ4QyeFohzjuST48m8ANfvBkRP_GDJis",
+  authDomain: "panda-coin-8d402.firebaseapp.com",
+  projectId: "panda-coin-8d402",
+  storageBucket: "panda-coin-8d402.firebasestorage.app",
+  messagingSenderId: "19621584838",
+  appId: "1:19621584838:web:b9c5511333b522fd095cc7",
+  measurementId: "G-WDDMWR350L"
+};
+// --- TELEGRAM BOT CONFIG ---
+const BOT_TOKEN = "8220455770:AAHCxA0NKt9NAt3ZRgC87jLaevRTr80Au64";
+const BOT_USERNAME = "GetPandacoin_bot";
+
+// ইউজারকে মেসেজ পাঠানোর ফাংশন
+async function sendTelegramMessage(userId, message) {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    try {
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: userId,
+                text: message,
+                parse_mode: 'HTML'
+            })
+        });
+        console.log("Message sent to " + userId);
+    } catch (e) {
+        console.error("Telegram Error: ", e);
+    }
+}
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const tg = window.Telegram.WebApp;
+
+        let currentUser = null;
+        let userData = null;
+
+        // --- Init Functions ---
+        function initTelegram() {
+            tg.expand();
+            tg.ready();
+            const user = tg.initDataUnsafe?.user;
+            
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-photo').src = user.photo_url || 'https://via.placeholder.com/48';
+                document.getElementById('user-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+                document.getElementById('user-id').innerText = `@${user.username || user.id}`;
+                createOrFetchUser(user);
+            } else {
+                // For browser testing
+                currentUser = { id: 1234567, first_name: "Test", username: "tester" };
+                createOrFetchUser(currentUser);
+            }
+        }
+
+        async function createOrFetchUser(user) {
+            const userRef = db.collection('users').doc(user.id.toString());
+            const doc = await userRef.get();
+
+            if (!doc.exists) {
+                // Referral Logic
+                const urlParams = new URLSearchParams(window.location.search);
+                const refBy = urlParams.get('start');
+
+                const newUser = {
+                    id: user.id,
+                    name: user.first_name,
+                    username: user.username || "",
+                    photoURL: user.photo_url || "",
+                    coinsTotal: 0,
+                    coinsEarned: 0,
+                    coinsPurchased: 0,
+                    refferBy: refBy || null,
+                    referrals: 0,
+                    tasksCompleted: 0,
+                    totalWithdrawals: 0,
+                    transferUnlocked: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                await userRef.set(newUser);
+                
+                // Reward referrer
+                if (refBy) {
+                    db.collection('users').doc(refBy).update({
+                        coinsEarned: firebase.firestore.FieldValue.increment(0.5),
+                        coinsTotal: firebase.firestore.FieldValue.increment(0.5),
+                        referrals: firebase.firestore.FieldValue.increment(1)
+                    });
+                }
+            }
+
+            // Realtime Listener
+            userRef.onSnapshot(snap => {
+                userData = snap.data();
+                renderUI();
+            });
+        }
+
+        function renderUI() {
+            if (!userData) return;
+
+            // Stats
+            document.getElementById('total-coins').innerText = (userData.coinsTotal || 0).toFixed(2);
+            document.getElementById('purchased-coins').innerText = (userData.coinsPurchased || 0).toFixed(2);
+            document.getElementById('earned-coins').innerText = (userData.coinsEarned || 0).toFixed(2);
+            document.getElementById('ref-count').innerText = userData.referrals || 0;
+            document.getElementById('task-count').innerText = userData.tasksCompleted || 0;
+
+            // Profile
+            document.getElementById('prof-photo').src = userData.photoURL || 'https://via.placeholder.com/80';
+            document.getElementById('prof-name').innerText = userData.name;
+            document.getElementById('prof-id').innerText = `@${userData.username || userData.id}`;
+            document.getElementById('prof-wd-total').innerText = `$${(userData.totalWithdrawals || 0).toFixed(2)}`;
+            document.getElementById('prof-refferer').innerText = userData.refferBy || "Direct";
+
+            // Status Badge
+            const statusHtml = userData.transferUnlocked 
+                ? '<span class="tag tag-unlocked">✅ Transfer Active</span>' 
+                : '<span class="tag tag-locked">🔒 Transfers Locked</span>';
+            document.getElementById('transfer-badge').innerHTML = statusHtml;
+            document.getElementById('prof-transfer-status').innerHTML = statusHtml;
+
+            // Load Content
+            renderAnnouncements();
+            renderAllTasks();
+            loadHistories();
+        }
+
+        // --- Logic Functions ---
+
+        async function renderAnnouncements() {
+            const now = new Date();
+            const snap = await db.collection('announcements')
+                .where('startTime', '<=', now)
+                .orderBy('startTime', 'desc').limit(1).get();
+
+            const container = document.getElementById('announcement-spot');
+            container.innerHTML = '';
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                if (data.endTime && data.endTime.toDate() < now) return;
+
+                let media = '';
+                if (data.type === 'banner') media = `<img src="${data.mediaUrl}" class="media-banner">`;
+                if (data.type === 'video') media = `<video src="${data.mediaUrl}" class="media-banner" autoplay muted loop></video>`;
+
+                container.innerHTML = `
+                    <div class="glass-card" style="padding:0; overflow:hidden">
+                        ${media}
+                        <div style="padding:12px">
+                            <h4 style="margin:0">${data.title}</h4>
+                            <p style="font-size:0.8rem; color:var(--text-dim); margin:5px 0">${data.body}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderAllTasks() {
+            db.collection('tasks').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                const fullList = document.getElementById('full-tasks-list');
+                const quickList = document.getElementById('quick-tasks-list');
+                fullList.innerHTML = '';
+                quickList.innerHTML = '';
+
+                let count = 0;
+                snap.forEach(doc => {
+                    const task = doc.data();
+                    const taskId = doc.id;
+                    const itemHtml = `
+                        <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03)">
+                            <div>
+                                <div style="font-weight:bold">${task.name}</div>
+                                <div style="font-size:0.7rem; color:var(--primary)">+${task.rewardUSD} Panda</div>
+                            </div>
+                            <button class="btn btn-sm btn-primary" style="width:auto" onclick="claimTask('${taskId}', '${task.link}', ${task.rewardUSD})">Claim</button>
+                        </div>
+                    `;
+                    fullList.innerHTML += itemHtml;
+                    if (count < 3) { quickList.innerHTML += itemHtml; count++; }
+                });
+            });
+        }
+
+        async function claimTask(taskId, link, reward) {
+            const claimId = `${currentUser.id}_${taskId}`;
+            const claimRef = db.collection('user_claims').doc(claimId);
+            
+            const doc = await claimRef.get();
+            if (doc.exists) return showToast("Already claimed!", "error");
+
+            window.open(link, '_blank');
+
+            // Wait for user to return/simulated verification
+            showToast("Verifying... Please wait 5s", "info");
+            
+            setTimeout(async () => {
+                await claimRef.set({
+                    userId: currentUser.id,
+                    taskId: taskId,
+                    claimedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                await db.collection('users').doc(currentUser.id.toString()).update({
+                    coinsEarned: firebase.firestore.FieldValue.increment(reward),
+                    coinsTotal: firebase.firestore.FieldValue.increment(reward),
+                    tasksCompleted: firebase.firestore.FieldValue.increment(1)
+                });
+
+                showToast(`Success! +${reward} Panda`, "success");
+            }, 5000);
+        }
+
+        async function submitDeposit() {
+            const amt = parseFloat(document.getElementById('dep-amount').value);
+            const txid = document.getElementById('dep-txid').value.trim();
+
+            if (!amt || amt < 5) return showToast("Minimum purchase is 5 USD", "error");
+            if (!txid) return showToast("Transaction ID required", "error");
+
+            await db.collection('payments').add({
+                userId: currentUser.id.toString(),
+                amountUSD: amt,
+                txid: txid,
+                method: "Bybit",
+                status: "pending",
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showToast("Deposit submitted for approval", "success");
+            document.getElementById('dep-amount').value = '';
+            document.getElementById('dep-txid').value = '';
+        }
+
+        async function submitWithdrawal() {
+            if (!userData.transferUnlocked) return showToast("Unlock transfer first by purchasing 5 USD", "error");
+            
+            const amt = parseFloat(document.getElementById('wd-amount').value);
+            const method = document.getElementById('wd-method').value;
+
+            if (!amt || amt > userData.coinsTotal) return showToast("Invalid amount or insufficient balance", "error");
+
+            await db.collection('withdrawals').add({
+                userId: currentUser.id.toString(),
+                amountUSD: amt,
+                paymentMethod: method,
+                status: "pending",
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Deduct immediately (Lock balance)
+            await db.collection('users').doc(currentUser.id.toString()).update({
+                coinsTotal: firebase.firestore.FieldValue.increment(-amt),
+                totalWithdrawals: firebase.firestore.FieldValue.increment(amt)
+            });
+
+            showToast("Withdrawal request sent", "success");
+        }
+
+        function loadHistories() {
+            // Payments
+            db.collection('payments').where('userId', '==', currentUser.id.toString()).limit(5).onSnapshot(snap => {
+                const el = document.getElementById('deposit-history');
+                el.innerHTML = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    el.innerHTML += `<div class="glass-card" style="padding:10px; font-size:0.8rem;">
+                        Deposit $${d.amountUSD} - <span style="color:${d.status === 'approved' ? 'var(--primary)' : 'var(--accent)'}">${d.status.toUpperCase()}</span>
+                    </div>`;
+                });
+            });
+
+            // Withdrawals
+            db.collection('withdrawals').where('userId', '==', currentUser.id.toString()).limit(3).onSnapshot(snap => {
+                const el = document.getElementById('withdrawal-history');
+                el.innerHTML = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    el.innerHTML += `<div class="glass-card" style="padding:10px; font-size:0.8rem;">
+                        Cashout $${d.amountUSD} - ${d.status.toUpperCase()}
+                    </div>`;
+                });
+            });
+        }
+
+        // --- UI Utils ---
+        function switchTabs(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function copyReferralLink() {
+            const link = `https://t.me/PandaCoinBot?start=${currentUser.id}`;
+            copyText(link);
+            showToast("Link Copied!");
+        }
+
+        function copyText(text) {
+            const input = document.createElement('textarea');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+        }
+
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            t.style.background = type === 'error' ? 'var(--danger)' : (type === 'success' ? 'var(--primary)' : '#333');
+            setTimeout(() => { t.style.display = 'none'; }, 3000);
+        }
+
+        // --- Entry ---
+        window.onload = initTelegram;
+
+    </script>
+</body>
+</html>

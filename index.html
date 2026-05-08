@@ -1,746 +1,295 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SojaAI Partner Portal</title>
-    
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamX - Premium Video Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
+                        brand: { 500: '#8b5cf6', 600: '#7c3aed' }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --bg-color: #0f172a; /* Slate 900 */
-            --card-bg: #1e293b; /* Slate 800 */
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #06b6d4; /* Cyan 500 */
-            --accent-hover: #0891b2;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --border: rgba(255, 255, 255, 0.1);
-            --radius: 12px;
-            --nav-height: 70px;
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        /* Custom Scrollbar for a premium feel */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
         
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            padding-bottom: calc(var(--nav-height) + 20px);
-            font-size: 14px;
-        }
-
-        /* Utility */
-        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
-        .hidden { display: none !important; }
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .justify-between { justify-content: space-between; }
-        .items-center { align-items: center; }
-        .gap-2 { gap: 8px; }
-        .gap-4 { gap: 16px; }
-        .mt-2 { margin-top: 8px; }
-        .mt-4 { margin-top: 16px; }
-        .text-center { text-align: center; }
-        .text-accent { color: var(--accent); }
-        .text-sm { font-size: 12px; }
-        .font-bold { font-weight: 700; }
-
-        /* Typography */
-        h1, h2, h3 { margin: 0; }
-        h1 { font-size: 20px; font-weight: 600; }
-        h2 { font-size: 18px; font-weight: 500; margin-bottom: 12px; }
-
-        /* Cards */
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .stat-card {
-            background: rgba(255,255,255,0.03);
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .stat-value { font-size: 20px; font-weight: 700; color: var(--text-main); display: block; margin-top: 4px; }
-        .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-
-        /* Forms */
-        .form-group { margin-bottom: 16px; }
-        label { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 13px; }
-        input, select, textarea {
-            width: 100%;
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--border);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: inherit;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-        textarea { resize: vertical; min-height: 80px; }
-
-        /* Buttons */
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 14px;
-            width: 100%;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.2s;
-        }
-        .btn:active { transform: scale(0.98); }
-        .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
-        .btn-danger { background: var(--danger); }
-        .btn-success { background: var(--success); }
-        .btn-sm { padding: 8px 12px; font-size: 12px; width: auto; display: inline-flex; }
-
-        /* Lists */
-        .list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .list-item:last-child { border-bottom: none; }
-        
-        /* Badges */
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
-        .badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-        .badge-approved { background: rgba(16, 185, 129, 0.15); color: var(--success); }
-        .badge-rejected { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
-        .badge-hot { background: rgba(239, 68, 68, 0.2); color: #ff6b6b; border: 1px solid #ff6b6b; }
-
-        /* Bottom Nav */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: var(--nav-height);
-            background: rgba(15, 23, 42, 0.95);
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(10px);
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 100;
-            padding-bottom: env(safe-area-inset-bottom);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .nav-item {
-            color: var(--text-muted);
-            font-size: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            flex: 1;
-            padding: 10px 0;
-        }
-        .nav-item i { font-size: 18px; margin-bottom: 2px; }
-        .nav-item.active { color: var(--accent); }
-
-        /* Loading / Skeleton */
-        .skeleton {
-            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            border-radius: 4px;
-            height: 20px;
-            margin-bottom: 8px;
-        }
-        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 12px 20px;
-            border-radius: 20px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-            z-index: 200;
+        
+        /* Smooth View Transitions */
+        .view-section {
+            display: none;
             opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            transition: opacity 0.4s ease-in-out;
         }
-        .toast.show { opacity: 1; pointer-events: auto; }
+        .view-section.active {
+            display: block;
+            opacity: 1;
+        }
 
-        /* Admin Tabs */
-        .admin-tabs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border); }
-        .admin-tab { white-space: nowrap; padding: 6px 12px; border-radius: 20px; background: rgba(255,255,255,0.05); font-size: 12px; cursor: pointer; }
-        .admin-tab.active { background: var(--accent); color: white; }
-
-        /* Warning Overlay */
-        #desktop-warning {
-            position: fixed; inset: 0; background: var(--bg-color); z-index: 999;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
         }
     </style>
 </head>
-<body>
+<body class="bg-dark-900 text-white font-sans h-screen flex flex-col overflow-hidden selection:bg-brand-500 selection:text-white">
 
-    <div id="desktop-warning" class="hidden">
-        <i class="fa-brands fa-telegram fa-3x text-accent" style="margin-bottom: 20px;"></i>
-        <h2>Access Denied</h2>
-        <p class="text-muted">Please open this app inside Telegram.</p>
-    </div>
-
-    <div id="toast" class="toast">
-        <i id="toast-icon" class="fa-solid fa-circle-check text-accent"></i>
-        <span id="toast-message">Action successful</span>
-    </div>
-
-    <div class="container flex justify-between items-center" style="padding-bottom: 10px; padding-top: 15px;">
-        <div class="flex items-center gap-2">
-            <div style="width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">S</div>
-            <div>
-                <div style="font-size: 16px; font-weight: 700;">SojaAI</div>
-                <div class="text-muted text-sm" id="user-display-name">Loading...</div>
+    <!-- Navbar -->
+    <nav class="h-16 border-b border-white/10 flex items-center justify-between px-4 lg:px-6 shrink-0 z-20 glass-panel">
+        <div class="flex items-center gap-4">
+            <button class="p-2 hover:bg-white/10 rounded-full transition-colors lg:hidden">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <div class="flex items-center gap-2 cursor-pointer" onclick="app.showHome()">
+                <div class="w-8 h-8 bg-gradient-to-br from-brand-500 to-fuchsia-500 rounded-lg flex items-center justify-center shadow-lg shadow-brand-500/30">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+                <span class="text-xl font-bold tracking-tight">Stream<span class="text-brand-500">X</span></span>
             </div>
         </div>
-        <div class="badge badge-approved hidden" id="admin-badge">ADMIN</div>
-    </div>
 
-    <div id="main-content" class="container">
+        <!-- Glassmorphism Search Bar -->
+        <div class="hidden md:flex flex-1 max-w-xl mx-8 relative group">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-brand-500 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input type="text" placeholder="Search for videos, creators, or categories..." 
+                   class="w-full bg-white/5 border border-white/10 backdrop-blur-md rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:outline-none focus:bg-white/10 focus:border-brand-500/50 transition-all shadow-inner">
         </div>
 
-    <nav class="bottom-nav" id="bottom-nav">
-        <div class="nav-item active" onclick="router.navigate('home')">
-            <i class="fa-solid fa-house"></i>
-            <span>Home</span>
-        </div>
-        <div class="nav-item" onclick="router.navigate('submit')">
-            <i class="fa-solid fa-plus-circle"></i>
-            <span>Submit</span>
-        </div>
-        <div class="nav-item" onclick="router.navigate('leads')">
-            <i class="fa-solid fa-list-ul"></i>
-            <span>Leads</span>
-        </div>
-        <div class="nav-item" onclick="router.navigate('earnings')">
-            <i class="fa-solid fa-wallet"></i>
-            <span>Earnings</span>
-        </div>
-        <div class="nav-item hidden" id="nav-admin" onclick="router.navigate('admin')">
-            <i class="fa-solid fa-shield-halved"></i>
-            <span>Admin</span>
+        <div class="flex items-center gap-3 lg:gap-5">
+            <button onclick="app.toggleUploadModal()" class="flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-full text-sm font-medium transition-all shadow-lg shadow-brand-500/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span class="hidden sm:block">Upload</span>
+            </button>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 cursor-pointer border-2 border-transparent hover:border-white transition-all ring-2 ring-transparent hover:ring-brand-500 overflow-hidden">
+                <img src="https://i.pravatar.cc/150?img=11" alt="Profile" class="w-full h-full object-cover">
+            </div>
         </div>
     </nav>
 
-    <script>
-        /**
-         * CONFIGURATION
-         * Replace BASE_WEBHOOK_URL with your n8n Production URL
-         */
-        const CONFIG = {
-            BASE_WEBHOOK_URL: "PASTE_N8N_BASE_URL_HERE", // e.g. https://n8n.yourdomain.com/webhook
-            USE_MOCK_DATA: true // Set to FALSE when connecting to real n8n
-        };
-
-        // State Management
-        const state = {
-            user: null, // { id, first_name, username }
-            profile: null, // { role, status, balance, stats }
-            currentTab: 'home',
-            leads: [],
-            earnings: []
-        };
-
-        // --- Mock Data Service (For Demonstration) ---
-        const MockService = {
-            getProfile: () => ({
-                role: "agent", // Change to "admin" to test admin view
-                status: "active",
-                stats: { total: 12, pending: 4, approved: 6, closed: 2, earnings: 1250, pending_payout: 250 },
-                balance: 1250
-            }),
-            submitLead: (data) => ({ success: true, lead_id: "LEAD-" + Math.floor(Math.random() * 1000) }),
-            getLeads: () => [
-                { id: 101, business: "Joe's Plumbing", city: "Austin, TX", category: "Plumbing", status: "pending", date: "2023-10-25" },
-                { id: 102, business: "Elite Roofing", city: "Dallas, TX", category: "Roofing", status: "approved", date: "2023-10-24" },
-                { id: 103, business: "Clean Co", city: "Miami, FL", category: "Cleaning", status: "rejected", date: "2023-10-23", note: "Duplicate entry" }
-            ],
-            getEarnings: () => [
-                { id: "D-55", client: "Elite Roofing", plan: "Pro", type: "Setup", amount: 500, status: "Paid", date: "2023-10-26" },
-                { id: "D-56", client: "Elite Roofing", plan: "Pro", type: "Monthly", amount: 100, status: "Pending", date: "2023-11-26" }
-            ],
-            withdraw: () => ({ success: true })
-        };
-
-        // --- API Layer ---
-        const api = {
-            async request(endpoint, method = 'GET', body = null) {
-                const url = `${CONFIG.BASE_WEBHOOK_URL}${endpoint}`;
-                
-                // Mock Mode Interceptor
-                if (CONFIG.USE_MOCK_DATA || url.includes("PASTE_N8N")) {
-                    console.log(`[MOCK API] ${method} ${endpoint}`, body);
-                    await new Promise(r => setTimeout(r, 800)); // Simulate lag
-                    
-                    if(endpoint === '/profile') return MockService.getProfile();
-                    if(endpoint === '/lead/submit') return MockService.submitLead(body);
-                    if(endpoint === '/leads/agent') return MockService.getLeads();
-                    if(endpoint === '/earnings') return MockService.getEarnings();
-                    if(endpoint === '/withdraw/request') return MockService.withdraw();
-                    // Admin mocks
-                    if(endpoint === '/admin/lead/verify') return { success: true };
-                    return {};
-                }
-
-                // Real Fetch
-                try {
-                    const headers = { 'Content-Type': 'application/json' };
-                    const options = { method, headers };
-                    
-                    // Attach User ID to everything
-                    const payload = body ? { ...body, telegram_user_id: state.user.id } : null;
-                    
-                    if (method === 'GET') {
-                        // Append params for GET
-                        const separator = url.includes('?') ? '&' : '?';
-                        const fullUrl = `${url}${separator}telegram_user_id=${state.user.id}`;
-                        const res = await fetch(fullUrl);
-                        return await res.json();
-                    } else {
-                        options.body = JSON.stringify(payload);
-                        const res = await fetch(url, options);
-                        return await res.json();
-                    }
-                } catch (error) {
-                    console.error("API Error", error);
-                    ui.showToast("Network Error. Please retry.", "error");
-                    throw error;
-                }
-            }
-        };
-
-        // --- UI Rendering ---
-        const views = {
-            home: () => {
-                if(!state.profile) return ui.skeleton();
-                const s = state.profile.stats;
-                return `
-                    <div class="card">
-                        <h2 class="text-accent">Overview</h2>
-                        <div class="stat-grid">
-                            <div class="stat-card"><span class="stat-label">Submitted</span><span class="stat-value">${s.total}</span></div>
-                            <div class="stat-card"><span class="stat-label">Pending</span><span class="stat-value" style="color:var(--warning)">${s.pending}</span></div>
-                            <div class="stat-card"><span class="stat-label">Approved</span><span class="stat-value" style="color:var(--success)">${s.approved}</span></div>
-                            <div class="stat-card"><span class="stat-label">Earned</span><span class="stat-value">$${s.earnings}</span></div>
-                        </div>
-                    </div>
-                    
-                    <h3>Quick Actions</h3>
-                    <div class="flex gap-2 mt-2">
-                        <button onclick="router.navigate('submit')" class="btn btn-outline" style="flex:1"><i class="fa-solid fa-plus"></i> Submit Lead</button>
-                        <button onclick="router.navigate('earnings')" class="btn btn-outline" style="flex:1"><i class="fa-solid fa-money-bill-transfer"></i> Payouts</button>
-                    </div>
-
-                    ${state.profile.role === 'admin' ? `
-                        <div class="card mt-4" style="border-color: var(--accent);">
-                            <h3>Admin Dashboard</h3>
-                            <p class="text-muted text-sm mb-2">You have admin privileges.</p>
-                            <button onclick="router.navigate('admin')" class="btn">Go to Admin Panel</button>
-                        </div>
-                    ` : ''}
-                `;
-            },
+    <!-- Main Layout -->
+    <div class="flex flex-1 overflow-hidden relative">
+        
+        <!-- Sidebar -->
+        <aside class="hidden lg:flex flex-col w-64 border-r border-white/10 bg-dark-900/50 backdrop-blur-sm overflow-y-auto py-4 shrink-0">
+            <div class="px-3 space-y-1">
+                <a href="#" onclick="app.showHome()" class="flex items-center gap-4 px-3 py-2.5 bg-white/10 rounded-lg text-white font-medium transition-colors">
+                    <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    Home
+                </a>
+                <a href="#" class="flex items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Trending
+                </a>
+                <a href="#" class="flex items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                    Subscriptions
+                </a>
+            </div>
             
-            submit: () => `
-                <h1>Submit New Lead</h1>
-                <p class="text-muted mb-4">Provide details to earn commission.</p>
+            <hr class="border-white/10 my-4 mx-4">
+            
+            <div class="px-3 space-y-1">
+                <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Library</h3>
+                <a href="#" class="flex items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    History
+                </a>
+                <a href="#" class="flex items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
+                    Liked Videos
+                </a>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="flex-1 overflow-y-auto bg-[#0b1120] relative" id="main-scroll">
+            
+            <!-- HOME VIEW -->
+            <div id="home-view" class="view-section active h-full flex flex-col">
+                <!-- Categories -->
+                <div class="sticky top-0 z-10 glass-panel border-b border-t-0 border-l-0 border-r-0 py-3 px-4 lg:px-8 flex gap-3 overflow-x-auto no-scrollbar">
+                    <div id="category-filters" class="flex gap-3">
+                        <!-- Rendered via JS -->
+                    </div>
+                </div>
+
+                <!-- Video Grid -->
+                <div class="p-4 lg:p-8">
+                    <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <!-- Videos rendered via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- PLAYER VIEW -->
+            <div id="player-view" class="view-section min-h-full">
+                <div class="max-w-[1800px] mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+                    
+                    <!-- Main Player Area -->
+                    <div class="lg:col-span-2 xl:col-span-3 flex flex-col gap-4">
+                        <!-- Video Container -->
+                        <div class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/5 ring-1 ring-white/10">
+                            <!-- Dummy video element, normally would use a real stream -->
+                            <video id="main-video-player" class="w-full h-full object-cover" controls autoplay>
+                                <source src="" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+
+                        <!-- Video Info -->
+                        <div class="flex flex-col gap-4 pb-6 border-b border-white/10">
+                            <h1 id="player-title" class="text-2xl font-bold text-white mt-2">Video Title Goes Here</h1>
+                            
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <!-- Creator Info -->
+                                <div class="flex items-center gap-3">
+                                    <img id="player-avatar" src="" alt="" class="w-12 h-12 rounded-full object-cover border border-white/20">
+                                    <div>
+                                        <h3 id="player-author" class="text-base font-semibold text-white">Author Name</h3>
+                                        <p class="text-sm text-gray-400">1.2M subscribers</p>
+                                    </div>
+                                    <button class="ml-4 bg-white text-black px-5 py-2 rounded-full font-semibold text-sm hover:bg-gray-200 transition-colors">Subscribe</button>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex items-center gap-2">
+                                    <div class="flex items-center bg-white/10 rounded-full border border-white/5">
+                                        <button class="flex items-center gap-2 px-4 py-2 hover:bg-white/10 rounded-l-full transition-colors border-r border-white/10">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
+                                            <span class="text-sm font-medium">Like</span>
+                                        </button>
+                                        <button class="px-4 py-2 hover:bg-white/10 rounded-r-full transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"></path></svg>
+                                        </button>
+                                    </div>
+                                    <button class="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/5 px-4 py-2 rounded-full transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                                        <span class="text-sm font-medium hidden sm:block">Share</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Description Box -->
+                            <div class="bg-white/5 rounded-xl p-4 mt-2 text-sm text-gray-300">
+                                <p class="font-semibold text-white mb-1"><span id="player-views">0</span> views • Premiered recently</p>
+                                <p>This is a highly responsive video streaming platform built with modern web technologies. Upload your own local MP4 files to see the client-side magic in action without a server!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Suggested Sidebar -->
+                    <div class="lg:col-span-1 flex flex-col gap-4">
+                        <h3 class="text-lg font-semibold text-white mb-2 hidden lg:block">Suggested Videos</h3>
+                        <div id="suggested-grid" class="flex flex-col gap-3">
+                            <!-- Suggested videos rendered via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="upload-modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="app.toggleUploadModal()"></div>
+        
+        <!-- Modal Content -->
+        <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div class="bg-dark-800 border border-white/10 w-full max-w-2xl rounded-2xl shadow-2xl pointer-events-auto overflow-hidden transform scale-95 transition-transform duration-300" id="upload-modal-content">
                 
-                <form id="leadForm" onsubmit="handlers.submitLead(event)">
-                    <div class="form-group">
-                        <label>Business Name *</label>
-                        <input type="text" name="business_name" required placeholder="e.g. Joe's Plumbing">
-                    </div>
-                    <div class="form-group">
-                        <label>Website / Maps Link *</label>
-                        <input type="text" name="link" required placeholder="https://...">
-                    </div>
-                    <div class="flex gap-2">
-                        <div class="form-group" style="flex:1">
-                            <label>City *</label>
-                            <input type="text" name="city" required>
-                        </div>
-                        <div class="form-group" style="flex:1">
-                            <label>State *</label>
-                            <input type="text" name="state" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select name="category">
-                            <option value="Plumbing">Plumbing</option>
-                            <option value="HVAC">HVAC</option>
-                            <option value="Roofing">Roofing</option>
-                            <option value="Cleaning">Cleaning</option>
-                            <option value="Clinic">Clinic/Health</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Lead Type</label>
-                        <select name="lead_type">
-                            <option value="Booking">Ready to Book</option>
-                            <option value="Quote">Wants Quote</option>
-                            <option value="Question">General Question</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Notes</label>
-                        <textarea name="notes" placeholder="Any context?"></textarea>
-                    </div>
-                    <div class="form-group flex items-center gap-2">
-                        <input type="checkbox" required style="width: auto;">
-                        <span class="text-sm text-muted">I confirm this is a real lead.</span>
-                    </div>
-                    <button type="submit" class="btn">Submit Lead</button>
-                </form>
-            `,
+                <div class="flex items-center justify-between p-6 border-b border-white/10">
+                    <h2 class="text-xl font-semibold text-white">Upload Video</h2>
+                    <button onclick="app.toggleUploadModal()" class="text-gray-400 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
 
-            leads: () => {
-                if(state.leads.length === 0 && !state.fetchedLeads) {
-                    handlers.fetchLeads(); // Trigger fetch
-                    return ui.skeleton();
-                }
+                <div class="p-8">
+                    <div id="drop-zone" class="border-2 border-dashed border-gray-600 rounded-xl p-12 text-center hover:border-brand-500 hover:bg-brand-500/5 transition-all cursor-pointer group">
+                        <input type="file" id="file-input" accept="video/mp4,video/webm,video/ogg" class="hidden">
+                        
+                        <div class="w-20 h-20 bg-dark-700 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                            <svg class="w-10 h-10 text-gray-400 group-hover:text-brand-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-medium text-white mb-2">Drag and drop video files to upload</h3>
+                        <p class="text-sm text-gray-400 mb-6">Your video will be private until you publish it.</p>
+                        <button class="bg-brand-600 hover:bg-brand-500 text-white px-6 py-2.5 rounded-full font-medium transition-colors" onclick="document.getElementById('file-input').click()">
+                            SELECT FILES
+                        </button>
+                    </div>
+                </div>
                 
-                let listHtml = state.leads.map(lead => `
-                    <div class="list-item">
-                        <div>
-                            <div class="font-bold">${lead.business}</div>
-                            <div class="text-sm text-muted">${lead.city} • ${lead.category}</div>
-                            ${lead.note ? `<div class="text-sm" style="color:var(--danger)">Note: ${lead.note}</div>` : ''}
+                <!-- Simple form for title/category after selection (simulated) -->
+                <div id="upload-details" class="hidden p-6 border-t border-white/10 bg-dark-900/50">
+                    <div class="flex gap-4 items-end">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Video Title</label>
+                            <input type="text" id="upload-title" class="w-full bg-dark-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-500" placeholder="My Awesome Video">
                         </div>
-                        <div class="text-center">
-                            <span class="badge badge-${lead.status}">${lead.status}</span>
-                            <div class="text-sm text-muted mt-2" style="font-size:10px">${lead.date}</div>
-                        </div>
-                    </div>
-                `).join('');
-
-                if(state.leads.length === 0) listHtml = `<div class="text-center text-muted mt-4">No leads submitted yet.</div>`;
-
-                return `
-                    <div class="flex justify-between items-center mb-4">
-                        <h1>My Leads</h1>
-                        <button class="btn btn-sm btn-outline" onclick="handlers.fetchLeads()"><i class="fa-solid fa-rotate"></i></button>
-                    </div>
-                    <div class="card">
-                        ${listHtml}
-                    </div>
-                `;
-            },
-
-            earnings: () => {
-                // Trigger fetch if not loaded
-                if(!state.fetchedEarnings) handlers.fetchEarnings();
-
-                const historyHtml = state.earnings.map(e => `
-                    <div class="list-item">
-                        <div>
-                            <div class="font-bold">${e.client}</div>
-                            <div class="text-sm text-muted">${e.type} (${e.plan})</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold text-success">+$${e.amount}</div>
-                            <span class="badge badge-${e.status.toLowerCase() === 'paid' ? 'approved' : 'pending'}">${e.status}</span>
-                        </div>
-                    </div>
-                `).join('');
-
-                return `
-                    <h1>Earnings</h1>
-                    <div class="card mt-4">
-                        <div class="text-muted text-sm">Available Balance</div>
-                        <div style="font-size: 32px; font-weight: 700; color: var(--success);">$${state.profile?.balance || 0}</div>
-                        <button class="btn mt-4" onclick="router.navigate('withdraw')">Request Withdrawal</button>
-                    </div>
-
-                    <h3>History</h3>
-                    <div class="card">
-                        ${historyHtml || '<div class="text-center text-muted">No transactions yet.</div>'}
-                    </div>
-                `;
-            },
-
-            withdraw: () => `
-                 <h1>Withdraw</h1>
-                 <p class="text-muted">Minimum withdrawal amount is $50.</p>
-                 <div class="card">
-                    <form onsubmit="handlers.requestWithdraw(event)">
-                        <div class="form-group">
-                            <label>Amount ($)</label>
-                            <input type="number" min="50" value="50" name="amount" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Method</label>
-                            <select name="method">
-                                <option value="PayPal">PayPal</option>
-                                <option value="Bank">Bank Transfer</option>
-                                <option value="USDT">USDT (TRC20)</option>
+                        <div class="w-1/3">
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Category</label>
+                            <select id="upload-category" class="w-full bg-dark-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-500">
+                                <option value="Tech">Tech</option>
+                                <option value="Gaming">Gaming</option>
+                                <option value="Music">Music</option>
+                                <option value="Vlogs">Vlogs</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Payment Details (Email / Address)</label>
-                            <input type="text" name="details" required placeholder="user@example.com or Wallet Addr">
-                        </div>
-                        <button type="submit" class="btn">Confirm Request</button>
-                        <button type="button" class="btn btn-outline mt-2" onclick="router.navigate('earnings')">Cancel</button>
-                    </form>
-                 </div>
-            `,
-
-            admin: () => `
-                <h1>Admin Panel</h1>
-                <div class="admin-tabs mt-4">
-                    <div class="admin-tab active" onclick="ui.switchAdminTab(this, 'verify')">Verify Leads</div>
-                    <div class="admin-tab" onclick="ui.switchAdminTab(this, 'deals')">Confirm Deals</div>
-                    <div class="admin-tab" onclick="ui.switchAdminTab(this, 'payouts')">Payouts</div>
-                    <div class="admin-tab" onclick="ui.switchAdminTab(this, 'settings')">Settings</div>
-                </div>
-                
-                <div id="admin-content">
-                    ${ui.renderAdminVerify()}
-                </div>
-            `
-        };
-
-        // --- Helper Components for Admin ---
-        ui = {
-            skeleton: () => `
-                <div class="skeleton" style="width: 60%"></div>
-                <div class="skeleton" style="height: 100px"></div>
-                <div class="skeleton" style="width: 80%"></div>
-                <div class="skeleton" style="width: 40%"></div>
-            `,
-            showToast: (msg, type = 'success') => {
-                const t = document.getElementById('toast');
-                const i = document.getElementById('toast-icon');
-                const m = document.getElementById('toast-message');
-                t.className = 'toast show';
-                m.innerText = msg;
-                i.className = type === 'success' ? 'fa-solid fa-circle-check text-success' : 'fa-solid fa-circle-exclamation text-danger';
-                setTimeout(() => t.className = 'toast', 3000);
-            },
-            switchAdminTab: (el, tabName) => {
-                document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-                el.classList.add('active');
-                const container = document.getElementById('admin-content');
-                if(tabName === 'verify') container.innerHTML = ui.renderAdminVerify();
-                if(tabName === 'deals') container.innerHTML = ui.renderAdminDeals();
-                if(tabName === 'payouts') container.innerHTML = ui.renderAdminPayouts();
-                if(tabName === 'settings') container.innerHTML = ui.renderAdminSettings();
-            },
-            renderAdminVerify: () => `
-                <div class="card">
-                    <div class="flex justify-between mb-2">
-                        <strong>Joe's Plumbing</strong>
-                        <span class="badge badge-pending">Pending</span>
-                    </div>
-                    <p class="text-sm text-muted">Submitted by @john_doe<br>Austin, TX • Plumbing</p>
-                    <textarea placeholder="Admin Note (if rejecting)" class="mt-2" style="font-size:12px;"></textarea>
-                    <div class="flex gap-2 mt-2">
-                        <button class="btn btn-sm btn-success" onclick="handlers.adminAction('approve_lead', 101)">Approve</button>
-                        <button class="btn btn-sm btn-danger" onclick="handlers.adminAction('reject_lead', 101)">Reject</button>
+                        <button onclick="app.processUpload()" class="bg-white text-black px-6 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition-colors">Publish</button>
                     </div>
                 </div>
-                <div class="text-center text-muted text-sm">End of pending leads</div>
-            `,
-            renderAdminDeals: () => `
-                <div class="card">
-                    <h3>Convert Lead to Deal</h3>
-                    <input type="text" placeholder="Lead ID" class="mb-2">
-                    <select class="mb-2"><option>Basic Plan</option><option>Pro Plan</option></select>
-                    <input type="number" placeholder="Setup Fee ($)" class="mb-2">
-                    <button class="btn btn-sm" onclick="ui.showToast('Deal Confirmed')">Create Deal</button>
-                </div>
-            `,
-            renderAdminPayouts: () => `<div class="text-center text-muted">No pending withdrawals</div>`,
-            renderAdminSettings: () => `
-                <div class="card">
-                    <label>Webhook URL</label>
-                    <input type="text" value="${CONFIG.BASE_WEBHOOK_URL}" disabled>
-                    <p class="text-sm text-muted mt-1">Update via source code.</p>
-                </div>
-            `
-        };
 
-        // --- Logic Handlers ---
-        const handlers = {
-            async submitLead(e) {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const data = Object.fromEntries(formData.entries());
-                
-                // Add Meta
-                data.agent_name = `${state.user.first_name} ${state.user.last_name || ''}`;
-                data.timestamp = new Date().toISOString();
+            </div>
+        </div>
+    </div>
 
-                const btn = e.target.querySelector('button[type="submit"]');
-                const originalText = btn.innerText;
-                btn.innerText = "Sending...";
-                btn.disabled = true;
-
-                try {
-                    const res = await api.request('/lead/submit', 'POST', data);
-                    ui.showToast(`Lead Submitted! ID: ${res.lead_id}`);
-                    e.target.reset();
-                    // Invalidate leads cache
-                    state.fetchedLeads = false;
-                    setTimeout(() => router.navigate('leads'), 1000);
-                } catch(err) {
-                    ui.showToast('Submission Failed', 'error');
-                } finally {
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                }
-            },
-
-            async fetchLeads() {
-                try {
-                    const data = await api.request('/leads/agent');
-                    state.leads = data;
-                    state.fetchedLeads = true;
-                    router.refresh();
-                } catch(err) {}
-            },
-
-            async fetchEarnings() {
-                try {
-                    state.earnings = await api.request('/earnings');
-                    state.fetchedEarnings = true;
-                    router.refresh();
-                } catch(err) {}
-            },
-
-            async requestWithdraw(e) {
-                e.preventDefault();
-                ui.showToast('Withdrawal Requested');
-                router.navigate('earnings');
-            },
-
-            async adminAction(action, id) {
-                ui.showToast('Processing...');
-                setTimeout(() => ui.showToast('Action Completed'), 1000);
-            }
-        };
-
-        // --- Router ---
-        const router = {
-            navigate: (viewName) => {
-                state.currentTab = viewName;
-                
-                // Update Bottom Nav
-                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-                const activeNav = document.querySelector(`.nav-item[onclick*="'${viewName}'"]`);
-                if(activeNav) activeNav.classList.add('active');
-
-                // Render Content
-                const content = document.getElementById('main-content');
-                if (views[viewName]) {
-                    content.innerHTML = views[viewName]();
-                    window.scrollTo(0,0);
-                }
-            },
-            refresh: () => {
-                router.navigate(state.currentTab);
-            }
-        };
-
-        // --- Initialization ---
-        async function initApp() {
-            const tg = window.Telegram.WebApp;
-            
-            // 1. Check if inside Telegram
-            if (!tg.initDataUnsafe?.user) {
-                // For development testing outside Telegram, create mock user if MOCK enabled
-                if(CONFIG.USE_MOCK_DATA) {
-                    state.user = { id: 999999, first_name: "Demo", last_name: "User", username: "demouser" };
-                    console.warn("Running in Browser Mock Mode");
-                } else {
-                    document.getElementById('desktop-warning').classList.remove('hidden');
-                    return;
-                }
-            } else {
-                tg.expand(); // Full screen
-                state.user = tg.initDataUnsafe.user;
-                
-                // Theme params
-                if(tg.colorScheme === 'dark') {
-                    // Telegram is dark, our theme fits. 
-                }
-            }
-
-            // Update Header
-            document.getElementById('user-display-name').innerText = `@${state.user.username || state.user.first_name}`;
-
-            // 2. Fetch Profile (Auth Check)
-            try {
-                const profile = await api.request('/profile');
-                state.profile = profile;
-
-                if (profile.role === 'admin') {
-                    document.getElementById('nav-admin').classList.remove('hidden');
-                    document.getElementById('admin-badge').classList.remove('hidden');
-                }
-
-                if (profile.agent_status === 'blocked') {
-                    document.body.innerHTML = '<div class="container text-center mt-4"><h1>Access Disabled</h1><p>Contact Admin.</p></div>';
-                    return;
-                }
-
-                // Load Home
-                router.navigate('home');
-
-            } catch (error) {
-                document.getElementById('main-content').innerHTML = '<div class="text-center mt-4">Failed to load profile. Check connection.</div>';
-            }
-        }
-
-        // Start
-        window.onload = initApp;
-
-    </script>
-</body>
-</html>
+    <!-- Application Logic -->
+    <script>
+        const app = {
+            // State
+            currentCategory: 'All',
+            categories: ['All', 'Tech', 'Gaming', 'Music', 'Vlogs', 'Design', 'Coding'],
+            videos: [
+                {
+                    id: 'v1',
+                    title: 'Building a Fullstack Next.js 14 App in 10 Hours',
+                    thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
+                    duration: '10:04:20',
+                    author: 'CodeMaster',
+                    avatar: 'https://i.pravatar.cc/150?img=33',
+                    views: '1.2M',
+                    category: 'Coding',
+                    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' // Dummy open source video
+                },
+                {
+                    id: 'v2',
+                    title: 'The Future of AI: What to Expect in 2026',
+                    thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb
